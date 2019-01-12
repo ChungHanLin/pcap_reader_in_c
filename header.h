@@ -59,4 +59,34 @@ struct sniff_tcp {
     u_short th_urp; /* urgent pointer */
 };
 
+struct sniff_udp {
+         u_short uh_sport;               /* source port */
+         u_short uh_dport;               /* destination port */
+         u_short uh_ulen;                /* udp length */
+         u_short uh_sum;                 /* udp checksum */
+
+};
+
+#define SIZE_UDP        8               /* length of UDP header */
+
+struct sniff_icmp {
+  u_int8_t type;		/* message type */
+  u_int8_t code;		/* type sub-code */
+  u_int16_t checksum;
+  union
+  {
+    struct
+    {
+      u_int16_t	id;
+      u_int16_t	sequence;
+    } echo;			/* echo datagram */
+    u_int32_t	gateway;	/* gateway address */
+    struct
+    {
+      u_int16_t	__unused;
+      u_int16_t	mtu;
+    } frag;			/* path mtu discovery */
+  } un;
+};
+
 #endif

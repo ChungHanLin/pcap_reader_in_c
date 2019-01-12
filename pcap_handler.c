@@ -77,31 +77,71 @@ int main(int argc, char **argv){
 // header 中存放 pcap 大小、時間訊息
 // packet 則存放整個結構
 void packet_Handler(u_char *pcapFD, const struct pcap_pkthdr* header, const u_char* packet){
-	dataLength++;
 	const struct sniff_ethernet *ethernet;
 	const struct sniff_ip *ip;		
 	const struct sniff_tcp *tcp;
-	u_char *payload;
+	const struct sniff_udp *udp;
+	const struct sniff_icmp *icmp;
 
 	int size_ethernet = sizeof(struct sniff_ethernet);
 	int size_ip = sizeof(struct sniff_ip);
 	int size_tcp = sizeof(struct sniff_tcp);
+	int size_udp = sizeof(struct sniff_udp);
+	int size_icmp = sizeof(struct sniff_icmp);
+
+	char portBuffer[BUFF_SIZE] = "";	// try if not added
+
+	dataLength++;
 
 	// 定義 header pointer
 	ethernet = (struct sniff_ethernet *) packet;
 	ip = (struct sniff_ip *) (packet + size_ethernet);
-	tcp = (struct sniff_tcp *) (packet + size_ethernet + size_ip);
-	payload = (u_char *) (packet + size_ethernet + size_ip + size_tcp);	
 
+	switch(ip->ip_p){
+	
+	case IPPROTO_TCP:
+		tcp = (struct sniff_tcp *) (packet + size_ethernet + size_ip);
+		
+		printf("%d. TCP\n", dataLength);
+		sprintf(portBuffer, "%sSource Port : %d\n", portBuffer, ntohs(tcp->th_sport));
+		sprintf(portBuffer, "%sTarget Port : %d\n", portBuffer, ntohs(tcp->th_dport));
+		break;
+
+	case IPPROTO_UDP:
+		udp = (struct sniff_udp *) (packet + size_ethernet + size_ip);
+		
+		printf("%d. UDP\n", dataLength);
+		sprintf(portBuffer, "%sSource Port : %d\n", portBuffer, ntohs(udp->uh_sport));
+		sprintf(portBuffer, "%sTarget Port : %d\n", portBuffer, ntohs(udp->uh_dport));
+
+		break;
+	
+	case IPPROTO_ICMP:
+		icmp = (struct sniff_icmp *) (packet + size_ethernet + size_ip);
+		
+		printf("%d. ICMP\n", dataLength);
+
+		break;
+
+	case IPPROTO_IP:
+		printf("Protocol : IP\n");
+		return;
+
+	default:
+		dataLength--;
+		return;
+	
+	}
 
 	// inet_ntoa : return address String with "." notation
-	printf("%d.\n", dataLength);
+	printf("Length : %d\n", header->len);
 	printf("Time : %s\n", getTimeString(header->ts.tv_sec));
-
 	printf("Source IP : %s\n", inet_ntoa(ip->ip_src));
 	printf("Target IP : %s\n", inet_ntoa(ip->ip_dst));
-	printf("Source Port : %d\n", ntohs(tcp->th_sport));
-	printf("Target Port : %d\n\n", ntohs(tcp->th_dport));
+	printf("%s\n", portBuffer);
+
+//	printf("Source Port : %d\n", ntohs(tcp->th_sport));
+//	printf("Target Port : %d\n\n", ntohs(tcp->th_dport));
 
 }
 
